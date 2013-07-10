@@ -13,32 +13,43 @@ sub flush {
 	# empty all fields except of CELL
 	%cellr = (CELL => $cellr{CELL}); 
 }
+
+sub read_fields(\@\@) { # returns name of fields and their position
+	my ($fields,$offset) = @_;
+	@$fields = m{(\w+)}g;
+	# calculating the positions of fields 
+	# to extract correctly values in next line
+	my $re = join " +",map "($_)",@$fields;
+	m{$re}; 
+	@$offset = @-;
+	shift(@$offset); # @_ starts from 1-st, we don't need it
+}
+
+sub read_values {
+	my @offset = @_;
+ 	my $values = <DATA>;
+	$values =~ s{\s+$}{}; # trim EOL spaces etc.
+	# trim @match_start to actual length of $values
+	$#offset-- while $offset[-1] > length($values);
+	# and push virtual end position for next
+	push @offset,length($values)+1;
+	my @values = map substr($values,$offset[$_],$offset[$_+1]-$offset[$_]), 0..$#offset-1;
+	# return left & right trimmed values
+	return map m{^\s*(.*?)\s*$},@values;
+}
+
 while (<DATA>) {
 	chomp;
 	next unless m{^[A-Z]};
 	last if m{^END\s*$};
-	if (m{^(CELL|CELLR)}) {
+	read_fields(my @fields,my @offset);
+	if (grep m{^(CELL|CELLR)}, @fields) {
 		flush;
 	} else {
 		# skip while there is no CELL data
 		next unless $cellr{CELL}; 
 	}
-	my @fields = m{(\w+)}g;
-	# calculating the positions of fields 
-	# to extract correctly values in next line
-	my $re = join " +",map "($_)",@fields;
-	m{$re}; 
-	my @match_start = @-;
-	shift(@match_start); # it starts from 1-th
-	my $values = <DATA>;
-	$values =~ s{\s+$}{}; # trim EOL spaces etc.
-	# trim @match_start to actual length of $values
-	$#match_start-- while $match_start[-1] > length($values);
-	# and push virtual end position for next
-	push @match_start,length($values)+1;
-	my @values = map substr($values,$match_start[$_],$match_start[$_+1]-$match_start[$_]), 0..$#match_start-1;
-	# save left & right trimmed values
-	@cellr{@fields} = map m{^\s*(.*?)\s*$},@values;
+	@cellr{@fields} = read_values(@offset);
 }
 flush;
 __END__
