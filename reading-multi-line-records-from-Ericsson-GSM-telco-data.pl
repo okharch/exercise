@@ -6,8 +6,7 @@ my @fields=qw(CELL CELLR DIR CAND CS KHYST KOFFSETP KOFFSETN LHYST LOFFSETP LOFF
 print join "\t",@fields;
 sub flush {
 	return unless $cellr{CELLR};
-	# print trimmed values
-	print join "\t",map m{^\s*(.*?)\s*$},map $_||"",@cellr{@fields};
+	print join "\t",map $_||"",@cellr{@fields};
 	# empty all fields except of CELL
 	%cellr = (CELL => $cellr{CELL}); 
 }
@@ -35,7 +34,8 @@ while (<DATA>) {
 	# and push virtual end position for next
 	push @match_start,length($values)+1;
 	my @values = map substr($values,$match_start[$_],$match_start[$_+1]-$match_start[$_]), 0..$#match_start-1;
-	@cellr{@fields} = @values;
+	# save left & right trimmed values
+	@cellr{@fields} = map m{^\s*(.*?)\s*$},@values;
 }
 flush;
 __END__
