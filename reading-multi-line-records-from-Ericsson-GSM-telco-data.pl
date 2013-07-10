@@ -1,3 +1,6 @@
+# this scripts implememts functionality for exercize mentioned on great Perl site
+# http://perlmaven.com/reading-multi-line-records#description
+# Thank you for exercize, Gabor!
 use strict;
 use warnings;
 $\ = "\n";
